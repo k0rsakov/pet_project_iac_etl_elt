@@ -11,108 +11,112 @@ from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 
 
-def load_json_config(config_path: str = "dags_config.json") -> list[dict[str, Any]]:
+def load_dag_config() -> dict[str, Any]:
     """
-    Загружает конфигурацию DAG'ов из JSON файла.
+    Загружает конфигурацию DAG из JSON файла.
 
-    @param config_path: Путь к JSON файлу с конфигурацией
-    @return: Список конфигураций DAG'ов
+    Returns:
+        Dict[str, Any]: Конфигурация DAG'ов
     """
-    config_file = Path(__file__).parent / config_path
+    config_path = Path(__file__).parent.parent.parent / "dag_config.json"
 
-    with open(config_file, encoding="utf-8") as file:
-        config = json.load(file)
+    try:
+        with config_path.open("r", encoding="utf-8") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        logging.exception("Файл конфигурации dag_config.json не найден")
+        return {"dags": []}
 
-    return config["dags"]
 
-
-def create_print_task(message: str):
+def create_print_task(message: str) -> callable:
     """
-    Создает функцию для печати сообщения в логи.
+    Создает функцию для печати сообщения и контекста.
 
-    @param message: Сообщение для вывода
-    @return: Функция для PythonOperator
+    Args:
+        message: Сообщение для вывода
+
+    Returns:
+        callable: Функция для выполнения в PythonOperator
     """
 
-    def print_message_task(**context) -> None:
-        logging.info(f"DAG Message: {message}")
-        logging.info(f"DAG ID: {context['dag'].dag_id}")
-        logging.info(f"Execution Date: {context['execution_date']}")
-        logging.info(f"Task Instance: {context['task_instance']}")
+    def print_message_and_context(**context) -> None:
+        """
+        Печатает сообщение и контекст DAG.
 
-        # Печатаем весь контекст как в оригинальном примере
-        for context_key in context:
-            logging.info(
-                f"key_name – {context_key} | "
-                f"value_name – {context[context_key]} | "
-                f"type_value_name – {type(context[context_key])}"
-            )
+        Args:
+            **context: Контекст DAG
+        """
+        logging.info(f"Сообщение: {message}")
 
-    return print_message_task
+        for key, value in context.items():
+            logging.info(f"key_name – {key} | value_name – {value} | type_value_name – {type(value)}")
+
+    return print_message_and_context
 
 
 def create_dag_from_config(dag_config: dict[str, Any]) -> DAG:
     """
     Создает DAG на основе конфигурации.
 
-    @param dag_config: Словарь с конфигурацией DAG
-    @return: Объект DAG
+    Args:
+        dag_config: Конфигурация DAG
+
+    Returns:
+        DAG: Созданный DAG
     """
+    try:
+        # Парсинг даты начала
+        start_date_str = dag_config.get("start_date", "2023-01-01")
+        start_date = pendulum.parse(start_date_str).replace(tzinfo=pendulum.timezone("Europe/Moscow"))
 
-    # Парсим дату начала
-    start_date = pendulum.parse(dag_config["start_date"]).replace(tzinfo=pendulum.timezone("Europe/Moscow"))
+        # Настройки по умолчанию
+        default_args = {
+            "owner": dag_config.get("owner", "airflow"),
+            "start_date": start_date,
+            "catchup": False,
+            "retries": dag_config.get("retries", 1),
+            "depends_on_past": True,
+            "retry_delay": pendulum.duration(seconds=1),
+        }
 
-    # Настройки по умолчанию
-    default_args = {
-        "owner": dag_config["owner"],
-        "start_date": start_date,
-        "catchup": dag_config.get("catchup", False),
-        "retries": dag_config.get("retries", 3),
-        "depends_on_past": True,
-        "retry_delay": pendulum.duration(seconds=1),
-    }
-
-    # Создаем DAG
-    dag = DAG(
-        dag_id=dag_config["dag_id"],
-        schedule_interval=dag_config["schedule_interval"],
-        default_args=default_args,
-        tags=dag_config.get("tags", []),
-        description=dag_config.get("description", ""),
-        concurrency=1,
-        max_active_tasks=1,
-        max_active_runs=1,
-    )
-
-    # Создаем задачи
-    with dag:
-        start = EmptyOperator(
-            task_id="start",
+        # Создание DAG
+        dag = DAG(
+            dag_id=dag_config["dag_id"],
+            schedule_interval=dag_config.get("schedule_interval", "0 0 * * *"),
+            default_args=default_args,
+            tags=dag_config.get("tags", ["generated"]),
+            description=f"Generated DAG from JSON config: {dag_config['dag_id']}",
+            concurrency=1,
+            max_active_tasks=1,
+            max_active_runs=1,
         )
 
-        print_task = PythonOperator(
-            task_id="print_message_task",
-            python_callable=create_print_task(dag_config.get("print_message", "Default message")),
-        )
+        with dag:
+            start = EmptyOperator(task_id="start")
 
-        end = EmptyOperator(
-            task_id="end",
-        )
+            print_message_task = PythonOperator(
+                task_id="print_message_task",
+                python_callable=create_print_task(dag_config.get("print_message", "Default message")),
+            )
 
-        # Определяем зависимости
-        start >> print_task >> end
+            end = EmptyOperator(task_id="end")
 
-    return dag
+            start >> print_message_task >> end
+
+        return dag  # noqa: TRY300
+
+    except Exception:
+        logging.exception(f"Ошибка при создании DAG {dag_config.get('dag_id', 'unknown')}")
+        raise
 
 
-# Загружаем конфигурацию и создаем DAG'и
-try:
-    dags_config = load_json_config()
+# Загрузка конфигурации и создание DAG'ов
+config = load_dag_config()
 
-    # Создаем DAG'и и добавляем их в глобальную область видимости
-    for config in dags_config:
-        dag_id = config["dag_id"]
-        globals()[dag_id] = create_dag_from_config(config)
-
-except Exception as e:
-    logging.exception(f"Error loading JSON config: {e}")
+for dag_config in config.get("dags", []):
+    try:
+        dag_id = dag_config["dag_id"]
+        globals()[dag_id] = create_dag_from_config(dag_config)
+        logging.info(f"DAG {dag_id} успешно создан из JSON конфигурации")
+    except Exception:
+        logging.exception("Не удалось создать DAG из конфигурации")
