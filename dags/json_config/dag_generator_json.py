@@ -64,17 +64,16 @@ def create_dag_from_config(dag_config: dict[str, Any]) -> DAG:
     default_args = {
         "owner": dag_config["owner"],
         "start_date": start_date,
-        "catchup": dag_config.get("catchup", False),
         "retries": dag_config.get("retries", 3),
         "depends_on_past": True,
         "retry_delay": pendulum.duration(seconds=1),
     }
 
-    # Создаем DAG
     dag = DAG(
         dag_id=dag_config["dag_id"],
         schedule_interval=dag_config["schedule_interval"],
         default_args=default_args,
+        catchup=dag_config.get("catchup", False),
         tags=dag_config.get("tags", []),
         description=dag_config.get("description", ""),
         concurrency=1,
