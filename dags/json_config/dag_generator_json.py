@@ -40,12 +40,6 @@ def create_print_task(message: str) -> callable:
         logging.info(f"Execution Date: {context['execution_date']}")
         logging.info(f"Task Instance: {context['task_instance']}")
 
-        # Печатаем весь контекст как в оригинальном примере
-        for context_key, context_value in context.items():
-            logging.info(
-                f"key_name – {context_key} | value_name – {context_value} | type_value_name – {type(context_value)}"
-            )
-
     return print_message_task
 
 
@@ -102,7 +96,6 @@ def create_dag_from_config(dag_config: dict[str, Any]) -> DAG:
     return dag
 
 
-# Загружаем конфигурацию и создаем DAG'и
 try:
     dags_config = load_json_config()
 

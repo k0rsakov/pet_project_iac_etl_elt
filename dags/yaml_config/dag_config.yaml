@@ -10,7 +10,7 @@ dags:
       - "yaml"
     print_message: "Hello from YAML generated DAG!"
     retries: 3
-    catchup: false
+    catchup: true
 
   - dag_id: "yaml_data_processing_generated"
     owner: "i.korsakov"

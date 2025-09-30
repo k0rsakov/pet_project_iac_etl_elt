@@ -9,7 +9,7 @@
       "tags": ["test", "generated", "json"],
       "print_message": "Hello from JSON generated DAG!",
       "retries": 3,
-      "catchup": false
+      "catchup": true
     },
     {
       "dag_id": "json_data_processing_generated",
