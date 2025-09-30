@@ -1,0 +1,39 @@
+dags:
+  - dag_id: "yaml_test_success_generated"
+    owner: "i.korsakov"
+    description: "Generated test success DAG from YAML config"
+    schedule_interval: "0 0 * * *"
+    start_date: "2023-01-01"
+    tags:
+      - "test"
+      - "generated"
+      - "yaml"
+    print_message: "Hello from YAML generated DAG!"
+    retries: 3
+    catchup: false
+
+  - dag_id: "yaml_data_processing_generated"
+    owner: "i.korsakov"
+    description: "Generated data processing DAG from YAML config"
+    schedule_interval: "0 2 * * *"
+    start_date: "2023-02-01"
+    tags:
+      - "data"
+      - "processing"
+      - "yaml"
+    print_message: "Processing data with YAML configuration!"
+    retries: 2
+    catchup: false
+
+  - dag_id: "yaml_monitoring_generated"
+    owner: "i.korsakov"
+    description: "Generated monitoring DAG from YAML config"
+    schedule_interval: "*/30 * * * *"
+    start_date: "2023-03-01"
+    tags:
+      - "monitoring"
+      - "alerts"
+      - "yaml"
+    print_message: "Monitoring system status from YAML!"
+    retries: 1
+    catchup: true

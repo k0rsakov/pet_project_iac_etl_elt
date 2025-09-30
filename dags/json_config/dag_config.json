@@ -1,0 +1,37 @@
+{
+  "dags": [
+    {
+      "dag_id": "json_test_success_generated",
+      "owner": "i.korsakov",
+      "description": "Generated test success DAG from JSON config",
+      "schedule_interval": "0 0 * * *",
+      "start_date": "2023-01-01",
+      "tags": ["test", "generated", "json"],
+      "print_message": "Hello from JSON generated DAG!",
+      "retries": 3,
+      "catchup": false
+    },
+    {
+      "dag_id": "json_data_processing_generated",
+      "owner": "i.korsakov",
+      "description": "Generated data processing DAG from JSON config",
+      "schedule_interval": "0 2 * * *",
+      "start_date": "2023-02-01",
+      "tags": ["data", "processing", "json"],
+      "print_message": "Processing data with JSON configuration!",
+      "retries": 2,
+      "catchup": false
+    },
+    {
+      "dag_id": "json_monitoring_generated",
+      "owner": "i.korsakov",
+      "description": "Generated monitoring DAG from JSON config",
+      "schedule_interval": "*/30 * * * *",
+      "start_date": "2023-03-01",
+      "tags": ["monitoring", "alerts", "json"],
+      "print_message": "Monitoring system status from JSON!",
+      "retries": 1,
+      "catchup": true
+    }
+  ]
+}
