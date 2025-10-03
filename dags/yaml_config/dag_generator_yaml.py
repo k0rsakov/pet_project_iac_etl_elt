@@ -1,5 +1,6 @@
 import logging
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +27,7 @@ def load_yaml_config(config_path: str = "dag_config.yaml") -> list[dict[str, Any
     return config["dags"]
 
 
-def create_print_task(message: str) -> callable:
+def create_print_task(message: str) -> Callable:
     """
     Создает функцию для печати сообщения в логи.
 
