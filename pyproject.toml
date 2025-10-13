@@ -204,7 +204,7 @@ filterwarnings = [
 ]
 
 [tool.poetry]
-name = "pet_project_custom_notification_airflow"
+name = "pet_project_iac_etl_elt"
 version = "0.0.1"
 description = ""
 authors = [""]
